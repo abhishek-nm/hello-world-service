@@ -1,26 +1,19 @@
-version: 2.1
+- run:
+    name: Update GitOps repo
+    command: |
+      git clone https://github.com/abhishek-nm/gitops-config.git
+      cd gitops-config/apps/hello-world
 
-jobs:
-  build:
-    docker:
-      - image: cimg/python:3.11
-    steps:
-      - checkout
-      - setup_remote_docker
+      echo "Before change:"
+      cat values.yaml
 
-      - run:
-          name: Build Docker image
-          command: |
-            docker build -t hello-world:${CIRCLE_SHA1} .
+      sed -i "s/^ *tag:.*/  tag: ${CIRCLE_SHA1}/" values.yaml
 
-      - run:
-          name: Update GitOps repo
-          command: |
-            git clone https://github.com/abhishek-nm/gitops-config.git
-            cd gitops-config/apps/hello-world
-            sed -i '' "s/tag:.*/tag: ${CIRCLE_SHA1}/" values.yaml
-            git config user.email "ci@circleci"
-            git config user.name "circleci"
-            git commit -am "hello-world → ${CIRCLE_SHA1}"
-            git push
+      echo "After change:"
+      cat values.yaml
 
+      git config user.email "ci@circleci"
+      git config user.name "circleci"
+      git add values.yaml
+      git commit -m "hello-world → ${CIRCLE_SHA1}"
+      git push
