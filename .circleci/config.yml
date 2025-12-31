@@ -16,7 +16,7 @@ jobs:
       - run:
           name: Update GitOps repo
           command: |
-            git clone https://github.com/<ORG>/gitops-config.git
+            git clone https://github.com/abhishek-nm/gitops-config.git
             cd gitops-config/apps/hello-world
             sed -i '' "s/tag:.*/tag: ${CIRCLE_SHA1}/" values.yaml
             git config user.email "ci@circleci"
