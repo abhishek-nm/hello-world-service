@@ -7,31 +7,19 @@ jobs:
 
     steps:
       - checkout
-
-      # 🔐 Explicitly load SSH key
-      - add_ssh_keys:
-          fingerprints:
-            - "SHA256:s91Bb/JFs6lu3A4NrTU2WyXCmmqXXwkYpg3PL/bKkvI"
-
-      # 🔐 Trust GitHub host
-      - run:
-          name: Trust GitHub SSH host
-          command: |
-            mkdir -p ~/.ssh
-            ssh-keyscan github.com >> ~/.ssh/known_hosts
-
       - setup_remote_docker
 
       - run:
-          name: Build Docker image
+          name: Build & Push Docker image
           command: |
-            docker build -t hello-world:${CIRCLE_SHA1} .
+            docker login -u $DOCKERHUB_USER -p $DOCKERHUB_TOKEN
+
+            docker build -t $DOCKERHUB_USER/hello-world:${CIRCLE_SHA1} .
+            docker push $DOCKERHUB_USER/hello-world:${CIRCLE_SHA1}
 
       - run:
           name: Update GitOps repo
           command: |
-            ssh -T git@github.com || true
-
             git clone git@github.com:abhishek-nm/gitops-config.git
             cd gitops-config/apps/hello-world
 
@@ -48,3 +36,4 @@ workflows:
   build-and-deploy:
     jobs:
       - build
+
