@@ -4,8 +4,21 @@ jobs:
   build:
     docker:
       - image: cimg/python:3.11
+
     steps:
       - checkout
+
+      # 🔐 Explicitly load SSH key
+      - add_ssh_keys:
+          fingerprints:
+            - "SHA256:s91Bb/JFs6lu3A4NrTU2WyXCmmqXXwkYpg3PL/bKkvI"
+
+      # 🔐 Trust GitHub host
+      - run:
+          name: Trust GitHub SSH host
+          command: |
+            mkdir -p ~/.ssh
+            ssh-keyscan github.com >> ~/.ssh/known_hosts
 
       - setup_remote_docker
 
@@ -17,16 +30,12 @@ jobs:
       - run:
           name: Update GitOps repo
           command: |
-            git clone git@github.com/abhishek-nm/gitops-config.git
+            ssh -T git@github.com || true
+
+            git clone git@github.com:abhishek-nm/gitops-config.git
             cd gitops-config/apps/hello-world
 
-            echo "Before change:"
-            cat values.yaml
-
             sed -i "s/^ *tag:.*/  tag: ${CIRCLE_SHA1}/" values.yaml
-
-            echo "After change:"
-            cat values.yaml
 
             git config user.email "ci@circleci"
             git config user.name "circleci"
