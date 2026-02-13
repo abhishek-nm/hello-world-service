@@ -1,0 +1,64 @@
+# Prod: AWS (or other) managed services. All endpoints and credentials from env.
+# Set SPRING_PROFILES_ACTIVE=prod and provide RDS, ElastiCache, Amazon MQ, MSK, OpenSearch URLs/creds.
+# See docs/ENV_INFRA_REFERENCE.md for the full env var list.
+
+server:
+  port: ${SERVER_PORT:5000}
+
+logging:
+  file:
+    path: /app/logs
+
+app:
+  features:
+    postgres:
+      enabled: ${APP_FEATURES_POSTGRES_ENABLED:true}
+    redis:
+      enabled: ${APP_FEATURES_REDIS_ENABLED:true}
+    rabbitmq:
+      enabled: ${APP_FEATURES_RABBITMQ_ENABLED:true}
+    kafka:
+      enabled: ${APP_FEATURES_KAFKA_ENABLED:false}
+    elasticsearch:
+      enabled: ${APP_FEATURES_ELASTICSEARCH_ENABLED:false}
+
+# All values from env in prod (RDS, ElastiCache, Amazon MQ, MSK, OpenSearch)
+spring:
+  datasource:
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: ${SPRING_DATASOURCE_HIKARI_MAX_POOL_SIZE:20}
+      minimum-idle: 5
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+      password: ${SPRING_DATA_REDIS_PASSWORD:}
+      lettuce:
+        pool:
+          max-active: 16
+          max-idle: 8
+  rabbitmq:
+    host: ${SPRING_RABBITMQ_HOST}
+    port: ${SPRING_RABBITMQ_PORT:5671}
+    username: ${SPRING_RABBITMQ_USERNAME}
+    password: ${SPRING_RABBITMQ_PASSWORD}
+  kafka:
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS}
+    consumer:
+      group-id: hello-world-service
+      auto-offset-reset: earliest
+      concurrency: 3
+    producer:
+      acks: 1
+      retries: 3
+  elasticsearch:
+    # Set when APP_FEATURES_ELASTICSEARCH_ENABLED=true (e.g. OpenSearch URL)
+    uris: ${SPRING_ELASTICSEARCH_URIS:https://localhost:9200}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false

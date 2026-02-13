@@ -1,0 +1,27 @@
+# Test profile: all optional features off, H2 in-memory
+app:
+  api:
+    contract:
+      strict-headers: false   # Tests can omit X-Client-Id, X-Idempotency-Key etc.
+  features:
+    postgres:
+      enabled: false
+    redis:
+      enabled: false
+    elasticsearch:
+      enabled: false
+    monitoring:
+      enabled: false
+    kafka:
+      enabled: false
+    rabbitmq:
+      enabled: false
+    statemachine:
+      enabled: false
+
+spring:
+  datasource:
+    url: jdbc:h2:mem:test;DB_CLOSE_DELAY=-1
+  jpa:
+    hibernate:
+      ddl-auto: create-drop

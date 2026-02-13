@@ -1,0 +1,122 @@
+# Organisation boilerplate: by default this service uses the shared infra (Redis, RabbitMQ, Kafka, PostgreSQL).
+# Start infra first from shared-infra-observability repo: ./run-infra.sh start
+# Fallbacks: Postgres off → H2 in-memory; Redis off → no cache; Elasticsearch off → DB search.
+# For 100M scale / horizontal scaling see SCALING.md.
+
+app:
+  api:
+    version: v1
+    contract:
+      strict-headers: true   # Require X-Client-Id, X-Client-Version, X-Idempotency-Key (POST/PUT/PATCH)
+  cache:
+    key-prefix: "sample:"   # Use unique prefix per service when sharing Redis (e.g. svc-a:)
+    ttl-seconds: 300
+  features:
+    # Default = use shared infra (from shared-infra-observability repo). Set false to use H2 / no cache / no messaging.
+    postgres:
+      enabled: true
+    redis:
+      enabled: true
+    rabbitmq:
+      enabled: true
+    kafka:
+      enabled: true
+    elasticsearch:
+      enabled: false
+    monitoring:
+      enabled: true
+    # APM: configure via env only (Elastic APM Java agent). Set ELASTIC_APM_SERVER_URL to enable.
+    # Env: ELASTIC_APM_SERVER_URL, ELASTIC_APM_SERVICE_NAME, ELASTIC_APM_ENVIRONMENT, ELASTIC_APM_SERVICE_VERSION
+    apm:
+      enabled: ${APP_FEATURES_APM_ENABLED:false}
+    statemachine:
+      enabled: true   # Example FSM (workflow demo); set false to disable
+
+server:
+  port: 9100
+  address: 0.0.0.0
+
+downstream:
+  url: http://hello-world-1:5000/internal
+
+# Datasource: default = shared infra Postgres. Set app.features.postgres.enabled=false and url to H2 for in-memory.
+# At scale: use HikariCP defaults (pool size ~10 per instance); tune per env (e.g. 20-50)
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/boilerplate
+    driver-class-name: org.postgresql.Driver
+    username: postgres
+    password: postgres
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        default_batch_fetch_size: 32
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      lettuce:
+        pool:
+          max-active: 16
+          max-idle: 8
+  elasticsearch:
+    uris: http://localhost:9200
+  # Used when app.features.rabbitmq.enabled=true (run RabbitMQ via docker-compose)
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+  # Used when app.features.kafka.enabled=true (run Kafka via docker-compose)
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: hello-world-service
+      auto-offset-reset: earliest
+      concurrency: 3
+    producer:
+      acks: 1
+      retries: 3
+
+# Circuit breaker for downstream calls (RestTemplate); prevents thread exhaustion at scale
+resilience4j:
+  circuitbreaker:
+    instances:
+      downstream:
+        register-health-indicator: true
+        sliding-window-size: 20
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 30s
+
+# Actuator: health, info, liveness/readiness, and system/app metrics (Prometheus + /metrics)
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+  endpoint:
+    health:
+      show-details: when-authorized
+      probes:
+        enabled: true   # /actuator/health/liveness and /actuator/health/readiness
+  health:
+    livenessstate:
+      enabled: true
+    readinessstate:
+      enabled: true
+    diskspace:
+      enabled: true    # disk space health indicator (optional)
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+    tags:
+      application: ${spring.application.name:hello-world-service}
+
+# Overrides for docker profile (see application-docker.yml)

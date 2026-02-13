@@ -1,0 +1,43 @@
+# Dev: infra on Kubernetes (Kind/EKS) or Docker network. All endpoints env-driven with K8s/Docker defaults.
+# K8s: use service names (redis, rabbitmq, kafka, postgres, elasticsearch). Override via env if different.
+# Set SPRING_PROFILES_ACTIVE=dev (or docker, which includes dev).
+
+server:
+  port: ${SERVER_PORT:5000}
+
+logging:
+  file:
+    path: /app/logs
+
+app:
+  features:
+    postgres:
+      enabled: ${APP_FEATURES_POSTGRES_ENABLED:true}
+    redis:
+      enabled: ${APP_FEATURES_REDIS_ENABLED:true}
+    rabbitmq:
+      enabled: ${APP_FEATURES_RABBITMQ_ENABLED:true}
+    kafka:
+      enabled: ${APP_FEATURES_KAFKA_ENABLED:false}
+    elasticsearch:
+      enabled: ${APP_FEATURES_ELASTICSEARCH_ENABLED:false}
+
+spring:
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://postgres:5432/boilerplate}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:postgres}
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST:redis}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+      password: ${SPRING_DATA_REDIS_PASSWORD:}
+  rabbitmq:
+    host: ${SPRING_RABBITMQ_HOST:rabbitmq}
+    port: ${SPRING_RABBITMQ_PORT:5672}
+    username: ${SPRING_RABBITMQ_USERNAME:guest}
+    password: ${SPRING_RABBITMQ_PASSWORD:guest}
+  kafka:
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:kafka:9092}
+  elasticsearch:
+    uris: ${SPRING_ELASTICSEARCH_URIS:http://elasticsearch:9200}

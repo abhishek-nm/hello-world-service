@@ -1,0 +1,36 @@
+# App only. Infra (Redis, RabbitMQ, Kafka, Postgres) in shared-infra-observability on network "infra".
+# Observability (ES, Kibana, APM) on host — app reaches them via host.docker.internal.
+# https://github.com/abhishek-nm/shared-infra-observability
+# 1) docker network create infra (if needed); docker compose -f docker-compose.infra.yml up -d
+# 2) docker compose -f docker-compose.observability.yml up -d  (host ports 9200, 8200, 5601)
+# 3) docker compose up -d --build
+# Equivalently: docker run --rm -p 9100:5000 --network infra --add-host=host.docker.internal:host-gateway \
+#   -e SPRING_PROFILES_ACTIVE=docker -e ELASTIC_APM_SERVER_URL=http://host.docker.internal:8200 \
+#   -e ELASTIC_APM_SERVICE_NAME=hello-world-service hello-world-service
+
+services:
+  app:
+    build: .
+    container_name: hello-world-service
+    ports:
+      - "9100:5000"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker,dev
+      ELASTIC_APM_SERVER_URL: http://host.docker.internal:8200
+      ELASTIC_APM_SERVICE_NAME: hello-world-service
+      APP_FEATURES_APM_ENABLED: "true"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:5000/actuator/health/readiness || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 90s
+    networks:
+      - infra
+
+networks:
+  infra:
+    external: true

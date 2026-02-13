@@ -1,0 +1,24 @@
+# Maven
+target/
+pom.xml.tag
+pom.releaseBackup
+.mvn/timing.log
+
+# Java
+*.class
+*.jar
+*.war
+*.log
+hs_err_pid*
+
+# IDE
+.idea/
+*.iml
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
