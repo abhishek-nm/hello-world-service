@@ -81,7 +81,7 @@ public class UniversalContractExceptionHandler {
         log.warn("RabbitMQ error: {}", ex.getMessage());
         String requestId = requestId();
         ResponseMeta meta = new ResponseMeta(RequestContextHolder.queryTimeMs(), false, true, apiVersion);
-        ErrorItem error = ErrorItem.of("RABBITMQ_UNAVAILABLE", "RabbitMQ is temporarily unavailable. Check that RabbitMQ is running and reachable.");
+        ErrorItem error = ErrorItem.of("RABBITMQ_UNAVAILABLE", "RabbitMQ is temporarily unavailable. Check that RabbitMQ is running and reachable. new message");
         error.setRetryable(true);
         UniversalResponse<Void> body = UniversalResponse.failed(List.of(error), requestId, meta);
         return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(body);
