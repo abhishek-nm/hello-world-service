@@ -43,7 +43,7 @@ public class EventsController {
                     .body(Map.of("message", "RabbitMQ not enabled. Set app.features.rabbitmq.enabled=true and run RabbitMQ (e.g. docker-compose up -d rabbitmq)."));
         }
         rabbitProducer.send(request.getMessage());
-        return ResponseEntity.accepted().body(Map.of("message", "Has been sent to RabbitMQ: with new message" + request.getMessage()));
+        return ResponseEntity.accepted().body(Map.of("message", "Has been entered to RabbitMQ: " + request.getMessage()));
     }
 
     @PostMapping("/kafka")
