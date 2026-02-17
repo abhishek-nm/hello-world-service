@@ -17,7 +17,7 @@ Spring Boot boilerplate for org services: feature-flagged Postgres, Redis, Elast
 
 ## Infra and observability
 
-**Infra** (Postgres, Redis, RabbitMQ, Kafka) and **observability** (Elasticsearch, Kibana, APM) are in a separate repo: **[abhishek-nm/shared-infra-observability](https://github.com/abhishek-nm/shared-infra-observability)**. Start them from there, then run this app (locally, Docker, or K8s).
+**Infra** (Postgres, Redis, RabbitMQ, Kafka) and **observability** (Elasticsearch, Kibana, APM) are in a separate repo: **[loylty-ai/shared-infra-observability](https://github.com/loylty-ai/shared-infra-observability)**. Start them from there, then run this app (locally, Docker, or K8s).
 
 ## Run locally
 
@@ -29,17 +29,30 @@ Start infra and observability from the **shared-infra-observability** repo, then
 
 Server: **http://localhost:9100**
 
+### One-shot local start (Docker)
+
+If you have both repos cloned (e.g. **shared-infra-observability** as a sibling of this repo), you can start infra + observability and run this app with one script:
+
+```bash
+./start-local.sh
+```
+
+- **Prereq:** Clone [shared-infra-observability](https://github.com/loylty-ai/shared-infra-observability) next to this repo, or set `export SHARED_INFRA_OBSERVABILITY_REPO=/path/to/shared-infra-observability`.
+- **App URL:** http://localhost:9100 (configurable via `HOST_PORT`, `CONTAINER_PORT`, `IMAGE_NAME` at the top of `start-local.sh`).
+- **Example curl** (when `HOST_PORT=9100`):  
+  `curl -X POST http://localhost:9100/api/v1/events/rabbit -H "Content-Type: application/json" -H "X-Client-Id: web" -H "X-Client-Version: 1.0.0" -H "X-Idempotency-Key: idem-$(date +%s)" -d '{"message": "test"}'`
+
 ## Docker
 
 **Step-by-step:** See [docs/RUN_WITH_DOCKER.md](docs/RUN_WITH_DOCKER.md) for full instructions and troubleshooting.
 
-**App only** — connects to Redis, RabbitMQ, Kafka, Elasticsearch by name on the **infra** network. Start [shared-infra-observability](https://github.com/abhishek-nm/shared-infra-observability) first (so network `infra` exists), then:
+**App only** — connects to Redis, RabbitMQ, Kafka, Postgres by name on the **infra** network; APM/ES via host. Start [shared-infra-observability](https://github.com/loylty-ai/shared-infra-observability) first (so network `infra` exists), then:
 
 ```bash
 docker compose up -d --build
 ```
 
-App: **http://localhost:5001**. Resolves `redis`, `rabbitmq`, `kafka`, `elasticsearch` from the infra stack. If your infra compose uses a different network name, set it under `networks` in `docker-compose.yml`.
+App: **http://localhost:9100**. Resolves `redis`, `rabbitmq`, `kafka`, `postgres` from the infra stack; APM at `host.docker.internal:8200`. If your infra compose uses a different network name, set it under `networks` in `docker-compose.yml`.
 
 **Option B – Run only the app image (you provide brokers/DB elsewhere):**
 
@@ -164,7 +177,7 @@ spring:
 2. Optionally set `ELASTIC_APM_SERVICE_NAME`, `ELASTIC_APM_ENVIRONMENT`, `ELASTIC_APM_SERVICE_VERSION`.
 3. Logs include `trace.id` in the pattern when the agent is active so you can correlate logs with traces in Kibana. **Where to view:** Kibana → **Logs** (`/app/logs`), **Discover** (`/app/discover`), **APM** (`/app/apm`). See [docs/ELASTIC_APM.md](docs/ELASTIC_APM.md) for exact URLs and log correlation.
 
-**Shared observability and infra** live in **[abhishek-nm/shared-infra-observability](https://github.com/abhishek-nm/shared-infra-observability)** (run `./run-infra.sh start` and `./run-observability.sh start`; Kibana: http://localhost:5601, APM: http://localhost:5601/app/apm). For **logs to Kibana** on Kind or EKS, use the Filebeat DaemonSet in [deploy/filebeat/](deploy/filebeat/). See [docs/INFRA_STACK.md](docs/INFRA_STACK.md).
+**Shared observability and infra** live in **[loylty-ai/shared-infra-observability](https://github.com/loylty-ai/shared-infra-observability)** (run `./run-infra.sh start` and `./run-observability.sh start`; Kibana: http://localhost:5601, APM: http://localhost:5601/app/apm). For **logs to Kibana** on Kind or EKS, use the Filebeat DaemonSet in [deploy/filebeat/](deploy/filebeat/). See [docs/INFRA_STACK.md](docs/INFRA_STACK.md).
 
 ## Event listeners (Kafka / RabbitMQ)
 
